@@ -1,6 +1,6 @@
 # shutdown
 
-Prioritized events for graceful shutdown in server Dart applications.
+Helps you release system or shared resources during unexpected application shutdown.
 
 ## Usage
 
