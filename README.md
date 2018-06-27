@@ -9,18 +9,19 @@ A simple usage example:
 ````dart
 import 'dart:async';
 
-import 'package:shutdown/shutdown.dart';
+import 'package:shutdown/shutdown.dart' as shutdown;
 
 Future main() async {
-  registerDefaultProcessSignals();
+  shutdown.triggerOnSigInt();
+  shutdown.triggerOnSigHup();
 
   final db = await _acquireDB();
-  addShutdownHandler(() => db.close());
+  shutdown.addHandler(() => db.close());
 
   // [do you stuff]
 
   // call it at the end, this is a successful exit
-  await shutdown();
+  await shutdown.shutdown();
 }
 
 Future _acquireDB() async => null; // TODO: implement
@@ -31,18 +32,19 @@ Future _acquireDB() async => null; // TODO: implement
 Combine this library with [package:stack_trace](https://pub.dartlang.org/packages/stack_trace):
 
 ````dart
-import 'package:shutdown/shutdown.dart';
+import 'package:shutdown/shutdown.dart' as shutdown;
 import 'package:stack_trace/stack_trace.dart';
 
 Future main() async {
-  registerDefaultProcessSignals();
+  shutdown.triggerOnSigInt();
+  shutdown.triggerOnSigHup();
   return Chain.capture(() async {
     // TODO: initialize, register shutdown handlers
     // do your stuff
-    await shutdown();
+    await shutdown.shutdown();
   }, onError: (error, Chain chain) async {
     // TODO: report/log error and stack
-    await shutdown(exitCode: -1);
+    await shutdown.shutdown(exitCode: -1);
   });
 }
 ````

@@ -27,21 +27,34 @@ class _Entry implements Comparable<_Entry> {
 final _entries = <_Entry>[];
 final _signalSubscriptions = <StreamSubscription>[];
 
-void registerDefaultProcessSignals({int exitCode}) {
-  void process(ProcessSignal ps) {
+void _trigger(ProcessSignal signal, int exitCode) {
+  _signalSubscriptions.add(signal.watch().listen((_) {
     shutdown(type: ShutdownType.vm, exitCode: exitCode ?? -1);
-  }
-
-  _signalSubscriptions.add(ProcessSignal.sigint.watch().listen(process));
-  _signalSubscriptions.add(ProcessSignal.sighup.watch().listen(process));
-  _signalSubscriptions.add(ProcessSignal.sigkill.watch().listen(process));
+  }));
 }
 
-void addShutdownHandler(ShutdownHandler handler, {int priority}) {
+void triggerOnSignal(ProcessSignal signal, {int exitCode}) =>
+    _trigger(signal, exitCode);
+
+void triggerOnSigInt({int exitCode}) =>
+    _trigger(ProcessSignal.sigint, exitCode);
+
+void triggerOnSigHup({int exitCode}) =>
+    _trigger(ProcessSignal.sighup, exitCode);
+
+void triggerOnSigKill({int exitCode}) =>
+    _trigger(ProcessSignal.sigkill, exitCode);
+
+void addHandler(ShutdownHandler handler, {int priority}) {
   _entries.add(new _Entry(handler, priority));
 }
 
+bool _shutdownStarted = false;
+
 Future shutdown({ShutdownType type, int exitCode}) async {
+  if (_shutdownStarted) return;
+  _shutdownStarted = true;
+
   type ??= ShutdownType.vm;
 
   // TODO: sort on insert?
