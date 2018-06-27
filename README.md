@@ -18,7 +18,7 @@ Future main() async {
   final db = await _acquireDB();
   shutdown.addHandler(() => db.close());
 
-  // [do you stuff]
+  // [do your stuff]
 
   // call it at the end, this is a successful exit
   await shutdown.shutdown();
