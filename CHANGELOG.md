@@ -1,6 +1,7 @@
 ## 0.4.0
 
 - Enable Dart2 versions.
+- Handler-specific and overall timeouts for closing resources.
 
 ## 0.3.0
 

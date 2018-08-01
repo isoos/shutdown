@@ -8,8 +8,9 @@ enum ShutdownType { isolate, vm }
 class _Entry implements Comparable<_Entry> {
   final ShutdownHandler _handler;
   final int _priority;
+  final Duration _timeout;
 
-  _Entry(this._handler, this._priority);
+  _Entry(this._handler, this._priority, this._timeout);
 
   @override
   int compareTo(_Entry other) {
@@ -45,32 +46,51 @@ void triggerOnSigHup({int exitCode}) =>
 void triggerOnSigKill({int exitCode}) =>
     _trigger(ProcessSignal.sigkill, exitCode);
 
-void addHandler(ShutdownHandler handler, {int priority}) {
-  _entries.add(new _Entry(handler, priority));
+void addHandler(ShutdownHandler handler, {int priority, Duration timeout}) {
+  _entries.add(new _Entry(handler, priority, timeout));
 }
 
 bool _shutdownStarted = false;
 
-Future shutdown({ShutdownType type, int exitCode}) async {
+Future shutdown({
+  ShutdownType type,
+  int exitCode,
+  Duration handlerTimeout: const Duration(seconds: 30),
+  Duration overallTimeout: const Duration(minutes: 5),
+}) async {
+  type ??= ShutdownType.vm;
+
   if (_shutdownStarted) return;
   _shutdownStarted = true;
 
-  type ??= ShutdownType.vm;
+  new Timer(overallTimeout, () {
+    _kill(type, exitCode);
+  });
+
+  _signalSubscriptions.forEach((subs) => subs.cancel());
 
   // TODO: sort on insert?
   _entries.sort();
 
   for (_Entry entry in _entries) {
     try {
-      await entry._handler();
+      FutureOr f = entry._handler();
+      if (f is Future) {
+        await f.timeout(entry._timeout ?? handlerTimeout,
+            onTimeout: () => null);
+      } else {
+        await f;
+      }
     } catch (e, st) {
       // TODO: error reporting with logging
       stderr.writeln('Shutdown handler error: $e\nStacktrace:\n$st');
     }
   }
 
-  _signalSubscriptions.forEach((subs) => subs.cancel());
+  _kill(type, exitCode);
+}
 
+void _kill(ShutdownType type, int exitCode) {
   switch (type) {
     case ShutdownType.isolate:
       Isolate.current.kill();
