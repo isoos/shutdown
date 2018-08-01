@@ -1,3 +1,7 @@
+## 0.4.0
+
+- Enable Dart2 versions.
+
 ## 0.3.0
 
 **Breaking changes**
