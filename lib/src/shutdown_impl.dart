@@ -28,23 +28,27 @@ class _Entry implements Comparable<_Entry> {
 final _entries = <_Entry>[];
 final _signalSubscriptions = <StreamSubscription>[];
 
-void _trigger(ProcessSignal signal, int exitCode) {
+void _trigger(ProcessSignal signal, int exitCode, bool reverse) {
   _signalSubscriptions.add(signal.watch().listen((_) {
-    shutdown(type: ShutdownType.vm, exitCode: exitCode ?? -1);
+    shutdown(
+      type: ShutdownType.vm,
+      exitCode: exitCode ?? -1,
+      reverse: reverse ?? false,
+    );
   }));
 }
 
-void triggerOnSignal(ProcessSignal signal, {int exitCode}) =>
-    _trigger(signal, exitCode);
+void triggerOnSignal(ProcessSignal signal, {int exitCode, bool reverse}) =>
+    _trigger(signal, exitCode, reverse);
 
-void triggerOnSigInt({int exitCode}) =>
-    _trigger(ProcessSignal.sigint, exitCode);
+void triggerOnSigInt({int exitCode, bool reverse}) =>
+    _trigger(ProcessSignal.sigint, exitCode, reverse);
 
-void triggerOnSigHup({int exitCode}) =>
-    _trigger(ProcessSignal.sighup, exitCode);
+void triggerOnSigHup({int exitCode, bool reverse}) =>
+    _trigger(ProcessSignal.sighup, exitCode, reverse);
 
-void triggerOnSigKill({int exitCode}) =>
-    _trigger(ProcessSignal.sigkill, exitCode);
+void triggerOnSigKill({int exitCode, bool reverse}) =>
+    _trigger(ProcessSignal.sigkill, exitCode, reverse);
 
 void addHandler(ShutdownHandler handler, {int priority, Duration timeout}) {
   _entries.add(_Entry(handler, priority, timeout));
@@ -60,9 +64,10 @@ Future shutdown({
   int exitCode,
   Duration handlerTimeout = const Duration(seconds: 30),
   Duration overallTimeout = const Duration(minutes: 5),
-  bool reverse = false,
+  bool reverse,
 }) async {
   type ??= ShutdownType.vm;
+  reverse ??= false;
 
   if (_shutdownStarted) return;
   _shutdownStarted = true;

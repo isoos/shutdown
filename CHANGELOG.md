@@ -1,3 +1,7 @@
+## 0.4.2
+
+- Added `reverse` flag to triggers.
+
 ## 0.4.1
 
 - Updated to latest Dart language lints.
