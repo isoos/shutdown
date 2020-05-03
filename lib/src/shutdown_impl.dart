@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
-typedef FutureOr ShutdownHandler();
+typedef ShutdownHandler = FutureOr Function();
 enum ShutdownType { isolate, vm }
 
 class _Entry implements Comparable<_Entry> {
@@ -47,34 +47,38 @@ void triggerOnSigKill({int exitCode}) =>
     _trigger(ProcessSignal.sigkill, exitCode);
 
 void addHandler(ShutdownHandler handler, {int priority, Duration timeout}) {
-  _entries.add(new _Entry(handler, priority, timeout));
+  _entries.add(_Entry(handler, priority, timeout));
 }
 
 bool _shutdownStarted = false;
 
+/// Executes the registered handler in (a) increasing priority order
+/// (unspecified priorities go to the end) and if that matches (b) in the order
+/// they were added.
 Future shutdown({
   ShutdownType type,
   int exitCode,
-  Duration handlerTimeout: const Duration(seconds: 30),
-  Duration overallTimeout: const Duration(minutes: 5),
+  Duration handlerTimeout = const Duration(seconds: 30),
+  Duration overallTimeout = const Duration(minutes: 5),
+  bool reverse = false,
 }) async {
   type ??= ShutdownType.vm;
 
   if (_shutdownStarted) return;
   _shutdownStarted = true;
 
-  new Timer(overallTimeout, () {
+  Timer(overallTimeout, () {
     _kill(type, exitCode);
   });
 
   _signalSubscriptions.forEach((subs) => subs.cancel());
 
-  // TODO: sort on insert?
   _entries.sort();
+  final entries = reverse ? _entries.reversed.toList() : _entries;
 
-  for (_Entry entry in _entries) {
+  for (final entry in entries) {
     try {
-      FutureOr f = entry._handler();
+      final f = entry._handler();
       if (f is Future) {
         await f.timeout(entry._timeout ?? handlerTimeout,
             onTimeout: () => null);

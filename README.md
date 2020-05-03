@@ -16,7 +16,7 @@ Future main() async {
   shutdown.triggerOnSigHup();
 
   final db = await _acquireDB();
-  shutdown.addHandler(() => db.close());
+  shutdown.addHandler(() async => db.close());
 
   // [do your stuff]
 

@@ -1,3 +1,8 @@
+## 0.4.1
+
+- Updated to latest Dart language lints.
+- Added `reverse` flag to optionally execute handlers in reverse order.
+
 ## 0.4.0
 
 - Enable Dart2 versions.
