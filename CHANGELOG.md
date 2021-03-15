@@ -1,3 +1,7 @@
+## 0.4.3
+
+- Migrated to null safety.
+
 ## 0.4.2
 
 - Added `reverse` flag to triggers.

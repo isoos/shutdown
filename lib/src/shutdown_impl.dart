@@ -7,8 +7,8 @@ enum ShutdownType { isolate, vm }
 
 class _Entry implements Comparable<_Entry> {
   final ShutdownHandler _handler;
-  final int _priority;
-  final Duration _timeout;
+  final int? _priority;
+  final Duration? _timeout;
 
   _Entry(this._handler, this._priority, this._timeout);
 
@@ -19,7 +19,7 @@ class _Entry implements Comparable<_Entry> {
     if (_priority != null &&
         other._priority != null &&
         _priority != other._priority) {
-      return _priority.compareTo(other._priority);
+      return _priority!.compareTo(other._priority!);
     }
     return 0;
   }
@@ -28,7 +28,7 @@ class _Entry implements Comparable<_Entry> {
 final _entries = <_Entry>[];
 final _signalSubscriptions = <StreamSubscription>[];
 
-void _trigger(ProcessSignal signal, int exitCode, bool reverse) {
+void _trigger(ProcessSignal signal, int? exitCode, bool? reverse) {
   _signalSubscriptions.add(signal.watch().listen((_) {
     shutdown(
       type: ShutdownType.vm,
@@ -38,19 +38,19 @@ void _trigger(ProcessSignal signal, int exitCode, bool reverse) {
   }));
 }
 
-void triggerOnSignal(ProcessSignal signal, {int exitCode, bool reverse}) =>
+void triggerOnSignal(ProcessSignal signal, {int? exitCode, bool? reverse}) =>
     _trigger(signal, exitCode, reverse);
 
-void triggerOnSigInt({int exitCode, bool reverse}) =>
+void triggerOnSigInt({int? exitCode, bool? reverse}) =>
     _trigger(ProcessSignal.sigint, exitCode, reverse);
 
-void triggerOnSigHup({int exitCode, bool reverse}) =>
+void triggerOnSigHup({int? exitCode, bool? reverse}) =>
     _trigger(ProcessSignal.sighup, exitCode, reverse);
 
-void triggerOnSigKill({int exitCode, bool reverse}) =>
+void triggerOnSigKill({int? exitCode, bool? reverse}) =>
     _trigger(ProcessSignal.sigkill, exitCode, reverse);
 
-void addHandler(ShutdownHandler handler, {int priority, Duration timeout}) {
+void addHandler(ShutdownHandler handler, {int? priority, Duration? timeout}) {
   _entries.add(_Entry(handler, priority, timeout));
 }
 
@@ -60,11 +60,11 @@ bool _shutdownStarted = false;
 /// (unspecified priorities go to the end) and if that matches (b) in the order
 /// they were added.
 Future shutdown({
-  ShutdownType type,
-  int exitCode,
+  ShutdownType? type,
+  int? exitCode,
   Duration handlerTimeout = const Duration(seconds: 30),
   Duration overallTimeout = const Duration(minutes: 5),
-  bool reverse,
+  bool? reverse,
 }) async {
   type ??= ShutdownType.vm;
   reverse ??= false;
@@ -99,13 +99,12 @@ Future shutdown({
   _kill(type, exitCode);
 }
 
-void _kill(ShutdownType type, int exitCode) {
+void _kill(ShutdownType? type, int? exitCode) {
   switch (type) {
     case ShutdownType.isolate:
       Isolate.current.kill();
       break;
     default:
       exit(exitCode ?? 0);
-      break;
   }
 }
