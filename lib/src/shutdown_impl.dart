@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 typedef ShutdownHandler = FutureOr Function();
+
 enum ShutdownType { isolate, vm }
 
 class _Entry implements Comparable<_Entry> {
